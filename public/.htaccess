@@ -3,6 +3,10 @@ RewriteEngine On
 # Disable directory listing
 Options -Indexes
 
+# Pass Authorization header to PHP (Apache sometimes strips it)
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 # Route /api/* and /api requests directly to api/index.php
 RewriteCond %{REQUEST_URI} ^/api
 RewriteRule ^api/?(.*)$ api/index.php [QSA,L]
