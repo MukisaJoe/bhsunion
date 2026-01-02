@@ -1,24 +1,6 @@
 services:
   - type: web
     name: bhs-union-api
-    runtime: php
-    buildCommand: ""
-    startCommand: php -S 0.0.0.0:$PORT -t public
-    envVars:
-      - key: PHP_VERSION
-        value: 8.1
-      - key: DB_HOST
-        sync: false
-      - key: DB_NAME
-        sync: false
-      - key: DB_USER
-        sync: false
-      - key: DB_PASS
-        sync: false
-
-databases:
-  - name: bhs-union-db
+    env: docker
     plan: free
-    databaseName: bhs_union
-    user: bhs_user
-
+    autoDeploy: true
