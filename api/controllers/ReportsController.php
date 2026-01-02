@@ -106,7 +106,7 @@ final class ReportsController
 
     private static function sumContributions(PDO $pdo, int $month, int $year): string
     {
-        $stmt = $pdo->prepare('SELECT COALESCE(SUM(amount), 0) AS total FROM contributions WHERE status = "confirmed" AND year = ? AND month = ?');
+        $stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) AS total FROM contributions WHERE status = 'confirmed' AND year = ? AND month = ?");
         $stmt->execute([$year, self::monthName($month)]);
         $row = $stmt->fetch();
         return 'UGX ' . number_format((float)$row['total'], 0, '.', ',');
@@ -117,7 +117,7 @@ final class ReportsController
         $monthNames = array_map([self::class, 'monthName'], $months);
         $placeholders = implode(',', array_fill(0, count($monthNames), '?'));
         $params = array_merge([$year], $monthNames);
-        $stmt = $pdo->prepare('SELECT COALESCE(SUM(amount), 0) AS total FROM contributions WHERE status = "confirmed" AND year = ? AND month IN (' . $placeholders . ')');
+        $stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) AS total FROM contributions WHERE status = 'confirmed' AND year = ? AND month IN (" . $placeholders . ')');
         $stmt->execute($params);
         $row = $stmt->fetch();
         return 'UGX ' . number_format((float)$row['total'], 0, '.', ',');
@@ -125,7 +125,7 @@ final class ReportsController
 
     private static function sumWithdrawals(PDO $pdo, int $month, int $year): string
     {
-        $stmt = $pdo->prepare('SELECT COALESCE(SUM(amount), 0) AS total FROM withdrawals WHERE YEAR(created_at) = ? AND MONTH(created_at) = ?');
+        $stmt = $pdo->prepare('SELECT COALESCE(SUM(amount), 0) AS total FROM withdrawals WHERE EXTRACT(YEAR FROM created_at) = ? AND EXTRACT(MONTH FROM created_at) = ?');
         $stmt->execute([$year, $month]);
         $row = $stmt->fetch();
         return 'UGX ' . number_format((float)$row['total'], 0, '.', ',');
@@ -135,7 +135,7 @@ final class ReportsController
     {
         $placeholders = implode(',', array_fill(0, count($months), '?'));
         $params = array_merge([$year], $months);
-        $stmt = $pdo->prepare('SELECT COALESCE(SUM(amount), 0) AS total FROM withdrawals WHERE YEAR(created_at) = ? AND MONTH(created_at) IN (' . $placeholders . ')');
+        $stmt = $pdo->prepare('SELECT COALESCE(SUM(amount), 0) AS total FROM withdrawals WHERE EXTRACT(YEAR FROM created_at) = ? AND EXTRACT(MONTH FROM created_at) IN (' . $placeholders . ')');
         $stmt->execute($params);
         $row = $stmt->fetch();
         return 'UGX ' . number_format((float)$row['total'], 0, '.', ',');
@@ -144,12 +144,12 @@ final class ReportsController
     private static function countMembers(PDO $pdo, ?string $status = null): int
     {
         if ($status === null) {
-            $stmt = $pdo->query('SELECT COUNT(*) AS total FROM users WHERE role = "member"');
+            $stmt = $pdo->query("SELECT COUNT(*) AS total FROM users WHERE role = 'member'");
             $row = $stmt->fetch();
             return (int)$row['total'];
         }
 
-        $stmt = $pdo->prepare('SELECT COUNT(*) AS total FROM users WHERE role = "member" AND status = ?');
+        $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM users WHERE role = 'member' AND status = ?");
         $stmt->execute([$status]);
         $row = $stmt->fetch();
         return (int)$row['total'];
@@ -157,7 +157,7 @@ final class ReportsController
 
     private static function countMembersCreated(PDO $pdo, int $month, int $year): int
     {
-        $stmt = $pdo->prepare('SELECT COUNT(*) AS total FROM users WHERE role = "member" AND YEAR(created_at) = ? AND MONTH(created_at) = ?');
+        $stmt = $pdo->prepare('SELECT COUNT(*) AS total FROM users WHERE role = \'member\' AND EXTRACT(YEAR FROM created_at) = ? AND EXTRACT(MONTH FROM created_at) = ?');
         $stmt->execute([$year, $month]);
         $row = $stmt->fetch();
         return (int)$row['total'];
@@ -179,7 +179,7 @@ final class ReportsController
 
     private static function countWithdrawals(PDO $pdo, int $month, int $year): int
     {
-        $stmt = $pdo->prepare('SELECT COUNT(*) AS total FROM withdrawals WHERE YEAR(created_at) = ? AND MONTH(created_at) = ?');
+        $stmt = $pdo->prepare('SELECT COUNT(*) AS total FROM withdrawals WHERE EXTRACT(YEAR FROM created_at) = ? AND EXTRACT(MONTH FROM created_at) = ?');
         $stmt->execute([$year, $month]);
         $row = $stmt->fetch();
         return (int)$row['total'];
@@ -187,7 +187,7 @@ final class ReportsController
 
     private static function countAnnouncements(PDO $pdo, int $month, int $year): int
     {
-        $stmt = $pdo->prepare('SELECT COUNT(*) AS total FROM announcements WHERE YEAR(created_at) = ? AND MONTH(created_at) = ?');
+        $stmt = $pdo->prepare('SELECT COUNT(*) AS total FROM announcements WHERE EXTRACT(YEAR FROM created_at) = ? AND EXTRACT(MONTH FROM created_at) = ?');
         $stmt->execute([$year, $month]);
         $row = $stmt->fetch();
         return (int)$row['total'];

@@ -13,7 +13,7 @@ final class AnnouncementsController
     {
         Auth::requireUser();
         $pdo = Database::connection();
-        $stmt = $pdo->query('SELECT a.id, a.title, a.content, a.published, a.created_at, u.name AS author FROM announcements a JOIN users u ON a.created_by = u.id WHERE a.published = 1 ORDER BY a.created_at DESC');
+        $stmt = $pdo->query('SELECT a.id, a.title, a.content, a.published, a.created_at, u.name AS author FROM announcements a JOIN users u ON a.created_by = u.id WHERE a.published = TRUE ORDER BY a.created_at DESC');
         Response::json(['success' => true, 'announcements' => $stmt->fetchAll()]);
     }
 
@@ -23,7 +23,7 @@ final class AnnouncementsController
         $data = Utils::jsonBody();
         $title = trim((string)($data['title'] ?? ''));
         $content = trim((string)($data['content'] ?? ''));
-        $published = (int)($data['published'] ?? 1);
+        $published = (bool)($data['published'] ?? true);
 
         if ($title === '' || $content === '') {
             Response::error('Title and content required', 422);
@@ -42,7 +42,7 @@ final class AnnouncementsController
         $data = Utils::jsonBody();
         $title = trim((string)($data['title'] ?? ''));
         $content = trim((string)($data['content'] ?? ''));
-        $published = (int)($data['published'] ?? 1);
+        $published = (bool)($data['published'] ?? true);
 
         $pdo = Database::connection();
         $stmt = $pdo->prepare('UPDATE announcements SET title = ?, content = ?, published = ? WHERE id = ?');
@@ -60,4 +60,3 @@ final class AnnouncementsController
         Response::json(['success' => true]);
     }
 }
-

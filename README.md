@@ -9,15 +9,15 @@ This backend matches the Flutter app flows: members contribute, admins confirm c
 4) Edit `api/config/config.php` with your DB credentials.
 5) Set your mobile app base URL to: `https://your-domain.com/api`.
 
-## Deploy (Render - PHP + Apache, MySQL on InfinityFree)
-1) Deploy the `Hosting/` folder as a Render Docker service.
-2) Set environment variables in Render:
-   - `DB_HOST=sql306.infinityfree.com`
-   - `DB_NAME=if0_40807765_bhsUnion`
-   - `DB_USER=if0_40807765`
-   - `DB_PASS=your_password`
+## Deploy (Render - PHP + Apache, Postgres)
+1) Create a Render Postgres instance.
+2) Deploy the `Hosting/` folder as a Render Docker service.
+3) Set environment variables in Render:
+   - `DATABASE_URL` (from Render Postgres)
+   - `DB_DRIVER=pgsql`
    - `ALLOWED_ORIGINS=*` (or your app domain)
-3) Use the Render service URL in the Flutter app `ApiConfig.baseUrl`.
+4) Import `database.sql` into the Render Postgres database.
+5) Use the Render service URL in the Flutter app `ApiConfig.baseUrl`.
 
 ## Create the first admin
 Run this SQL once (replace values):

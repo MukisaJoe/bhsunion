@@ -58,7 +58,7 @@ final class ContributionsController
     {
         $admin = Auth::requireRole('admin');
         $pdo = Database::connection();
-        $stmt = $pdo->prepare('UPDATE contributions SET status = "confirmed", confirmed_at = NOW(), confirmed_by = ? WHERE id = ?');
+        $stmt = $pdo->prepare("UPDATE contributions SET status = 'confirmed', confirmed_at = NOW(), confirmed_by = ? WHERE id = ?");
         $stmt->execute([(int)$admin['id'], $contributionId]);
 
         $stmt = $pdo->prepare('INSERT INTO audit_logs (actor_id, action) VALUES (?, ?)');
@@ -67,4 +67,3 @@ final class ContributionsController
         Response::json(['success' => true]);
     }
 }
-

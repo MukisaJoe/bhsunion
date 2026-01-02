@@ -2,8 +2,8 @@ FROM php:8.2-apache
 
 RUN a2enmod rewrite
 
-# Install PDO MySQL extension
-RUN docker-php-ext-install pdo pdo_mysql
+# Install PDO MySQL and PostgreSQL extensions
+RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
 
 # Copy API directory
 COPY api/ /var/www/html/api/

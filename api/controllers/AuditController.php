@@ -36,9 +36,8 @@ final class AuditController
             Response::error('Minimum rotation is 7 days', 422);
         }
         $pdo = Database::connection();
-        $stmt = $pdo->prepare('DELETE FROM audit_logs WHERE created_at < (NOW() - INTERVAL ? DAY)');
-        $stmt->execute([$days]);
+        $stmt = $pdo->prepare("DELETE FROM audit_logs WHERE created_at < (NOW() - (? || ' days')::interval)");
+        $stmt->execute([(string)$days]);
         Response::json(['success' => true, 'message' => 'Audit logs rotated']);
     }
 }
-

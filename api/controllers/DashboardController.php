@@ -86,11 +86,11 @@ final class DashboardController
     private static function countMembers(PDO $pdo, ?string $status = null): int
     {
         if ($status === null) {
-            $stmt = $pdo->query('SELECT COUNT(*) AS total FROM users WHERE role = "member"');
+            $stmt = $pdo->query("SELECT COUNT(*) AS total FROM users WHERE role = 'member'");
             $row = $stmt->fetch();
             return (int)$row['total'];
         }
-        $stmt = $pdo->prepare('SELECT COUNT(*) AS total FROM users WHERE role = "member" AND status = ?');
+        $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM users WHERE role = 'member' AND status = ?");
         $stmt->execute([$status]);
         $row = $stmt->fetch();
         return (int)$row['total'];
@@ -106,7 +106,7 @@ final class DashboardController
 
     private static function countPaidMembers(PDO $pdo, string $month, int $year): int
     {
-        $stmt = $pdo->prepare('SELECT COUNT(DISTINCT member_id) AS total FROM contributions WHERE month = ? AND year = ? AND status = "confirmed"');
+        $stmt = $pdo->prepare("SELECT COUNT(DISTINCT member_id) AS total FROM contributions WHERE month = ? AND year = ? AND status = 'confirmed'");
         $stmt->execute([$month, $year]);
         $row = $stmt->fetch();
         return (int)$row['total'];
@@ -114,7 +114,7 @@ final class DashboardController
 
     private static function treasuryBalance(PDO $pdo): float
     {
-        $stmt = $pdo->query('SELECT COALESCE(SUM(amount), 0) AS total FROM contributions WHERE status = "confirmed"');
+        $stmt = $pdo->query("SELECT COALESCE(SUM(amount), 0) AS total FROM contributions WHERE status = 'confirmed'");
         $contrib = (float)($stmt->fetch()['total'] ?? 0);
 
         $stmt = $pdo->query('SELECT COALESCE(SUM(amount), 0) AS total FROM withdrawals');
@@ -125,13 +125,13 @@ final class DashboardController
 
     private static function latestPayments(PDO $pdo): array
     {
-        $stmt = $pdo->query('SELECT c.amount, c.month, c.year, c.confirmed_at, u.name AS member_name FROM contributions c JOIN users u ON c.member_id = u.id WHERE c.status = "confirmed" ORDER BY c.confirmed_at DESC LIMIT 5');
+        $stmt = $pdo->query("SELECT c.amount, c.month, c.year, c.confirmed_at, u.name AS member_name FROM contributions c JOIN users u ON c.member_id = u.id WHERE c.status = 'confirmed' ORDER BY c.confirmed_at DESC LIMIT 5");
         return $stmt->fetchAll();
     }
 
     private static function pendingMembers(PDO $pdo): array
     {
-        $stmt = $pdo->query('SELECT id, name, email FROM users WHERE role = "member" AND status = "pending" ORDER BY created_at DESC LIMIT 5');
+        $stmt = $pdo->query("SELECT id, name, email FROM users WHERE role = 'member' AND status = 'pending' ORDER BY created_at DESC LIMIT 5");
         return $stmt->fetchAll();
     }
 
@@ -167,7 +167,7 @@ final class DashboardController
 
     private static function latestAnnouncements(PDO $pdo, int $limit): array
     {
-        $stmt = $pdo->prepare('SELECT id, title, content, created_at FROM announcements WHERE published = 1 ORDER BY created_at DESC LIMIT ?');
+        $stmt = $pdo->prepare('SELECT id, title, content, created_at FROM announcements WHERE published = TRUE ORDER BY created_at DESC LIMIT ?');
         $stmt->bindValue(1, $limit, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll();
@@ -192,7 +192,7 @@ final class DashboardController
             ];
         }
 
-        $stmt = $pdo->query('SELECT title, created_at FROM announcements WHERE published = 1 ORDER BY created_at DESC LIMIT 1');
+        $stmt = $pdo->query('SELECT title, created_at FROM announcements WHERE published = TRUE ORDER BY created_at DESC LIMIT 1');
         $announcement = $stmt->fetch();
         if ($announcement) {
             $activity[] = [

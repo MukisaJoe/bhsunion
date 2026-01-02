@@ -16,10 +16,10 @@ final class MembersController
 
         $pdo = Database::connection();
         if ($status) {
-            $stmt = $pdo->prepare('SELECT id, name, email, role, status, phone, created_at FROM users WHERE role = "member" AND status = ? ORDER BY created_at DESC');
+            $stmt = $pdo->prepare("SELECT id, name, email, role, status, phone, created_at FROM users WHERE role = 'member' AND status = ? ORDER BY created_at DESC");
             $stmt->execute([$status]);
         } else {
-            $stmt = $pdo->query('SELECT id, name, email, role, status, phone, created_at FROM users WHERE role = "member" ORDER BY created_at DESC');
+            $stmt = $pdo->query("SELECT id, name, email, role, status, phone, created_at FROM users WHERE role = 'member' ORDER BY created_at DESC");
         }
         $members = $stmt->fetchAll();
         Response::json(['success' => true, 'members' => $members]);
@@ -41,7 +41,7 @@ final class MembersController
         $hash = password_hash($password, PASSWORD_DEFAULT);
 
         $pdo = Database::connection();
-        $stmt = $pdo->prepare('INSERT INTO users (name, email, password_hash, role, status, phone) VALUES (?, ?, ?, "member", "active", ?)');
+        $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash, role, status, phone) VALUES (?, ?, ?, 'member', 'active', ?)");
         $stmt->execute([$name, $email, $hash, $phone]);
 
         $stmt = $pdo->prepare('INSERT INTO audit_logs (actor_id, action) VALUES (?, ?)');
@@ -61,7 +61,7 @@ final class MembersController
         }
 
         $pdo = Database::connection();
-        $stmt = $pdo->prepare('UPDATE users SET status = ? WHERE id = ? AND role = "member"');
+        $stmt = $pdo->prepare("UPDATE users SET status = ? WHERE id = ? AND role = 'member'");
         $stmt->execute([$status, $memberId]);
 
         $stmt = $pdo->prepare('INSERT INTO audit_logs (actor_id, action) VALUES (?, ?)');
@@ -78,7 +78,7 @@ final class MembersController
 
         $hash = password_hash($newPassword, PASSWORD_DEFAULT);
         $pdo = Database::connection();
-        $stmt = $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ? AND role = "member"');
+        $stmt = $pdo->prepare("UPDATE users SET password_hash = ? WHERE id = ? AND role = 'member'");
         $stmt->execute([$hash, $memberId]);
 
         $stmt = $pdo->prepare('INSERT INTO audit_logs (actor_id, action) VALUES (?, ?)');

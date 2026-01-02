@@ -14,7 +14,7 @@ final class ChatController
         Auth::requireUser();
         self::purgeOldMessages();
         $pdo = Database::connection();
-        $stmt = $pdo->query('SELECT c.id, c.message, c.created_at, c.edited_at, c.deleted_at, u.name AS sender_name, u.role AS sender_role FROM chat_messages c JOIN users u ON c.sender_id = u.id WHERE c.created_at >= (NOW() - INTERVAL 8 DAY) ORDER BY c.created_at DESC');
+        $stmt = $pdo->query("SELECT c.id, c.message, c.created_at, c.edited_at, c.deleted_at, u.name AS sender_name, u.role AS sender_role FROM chat_messages c JOIN users u ON c.sender_id = u.id WHERE c.created_at >= (NOW() - INTERVAL '8 days') ORDER BY c.created_at DESC");
         $messages = $stmt->fetchAll();
         $messageIds = array_map(static fn($row) => (int)$row['id'], $messages);
 
@@ -142,7 +142,7 @@ final class ChatController
     private static function purgeOldMessages(): void
     {
         $pdo = Database::connection();
-        $pdo->exec('DELETE FROM chat_messages WHERE created_at < (NOW() - INTERVAL 8 DAY)');
+        $pdo->exec("DELETE FROM chat_messages WHERE created_at < (NOW() - INTERVAL '8 days')");
         $pdo->exec('DELETE FROM chat_reactions WHERE message_id NOT IN (SELECT id FROM chat_messages)');
     }
 }

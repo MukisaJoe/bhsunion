@@ -1,131 +1,120 @@
-CREATE TABLE users (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+-- PostgreSQL schema for Bhs Union API
+
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
   email VARCHAR(190) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   name VARCHAR(190) NOT NULL,
-  role ENUM('admin','member') NOT NULL DEFAULT 'member',
-  status ENUM('active','pending','disabled') NOT NULL DEFAULT 'pending',
+  role VARCHAR(20) NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('active', 'pending', 'disabled')),
   phone VARCHAR(40) DEFAULT NULL,
   provider VARCHAR(60) DEFAULT NULL,
   mobile_money_number VARCHAR(40) DEFAULT NULL,
   other_number VARCHAR(40) DEFAULT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE session_tokens (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id INT UNSIGNED NOT NULL,
-  token_hash CHAR(64) NOT NULL,
-  expires_at DATETIME NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  UNIQUE KEY token_hash_unique (token_hash)
+CREATE TABLE IF NOT EXISTS session_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash CHAR(64) NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE contributions (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  member_id INT UNSIGNED NOT NULL,
+CREATE TABLE IF NOT EXISTS contributions (
+  id SERIAL PRIMARY KEY,
+  member_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   month VARCHAR(20) NOT NULL,
   year INT NOT NULL,
-  amount DECIMAL(12,2) NOT NULL,
-  status ENUM('pending','confirmed','rejected') NOT NULL DEFAULT 'pending',
-  submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  confirmed_at DATETIME DEFAULT NULL,
-  confirmed_by INT UNSIGNED DEFAULT NULL,
-  FOREIGN KEY (member_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (confirmed_by) REFERENCES users(id) ON DELETE SET NULL,
-  INDEX idx_contrib_member_period (member_id, year, month),
-  INDEX idx_contrib_status (status)
+  amount NUMERIC(12, 2) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'rejected')),
+  submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  confirmed_at TIMESTAMP DEFAULT NULL,
+  confirmed_by INT REFERENCES users(id) ON DELETE SET NULL
 );
+CREATE INDEX IF NOT EXISTS idx_contrib_member_period ON contributions (member_id, year, month);
+CREATE INDEX IF NOT EXISTS idx_contrib_status ON contributions (status);
 
-CREATE TABLE withdrawals (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  admin_id INT UNSIGNED NOT NULL,
-  amount DECIMAL(12,2) NOT NULL,
+CREATE TABLE IF NOT EXISTS withdrawals (
+  id SERIAL PRIMARY KEY,
+  admin_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  amount NUMERIC(12, 2) NOT NULL,
   reason VARCHAR(255) NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_withdrawals_created (created_at)
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX IF NOT EXISTS idx_withdrawals_created ON withdrawals (created_at);
 
-CREATE TABLE announcements (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS announcements (
+  id SERIAL PRIMARY KEY,
   title VARCHAR(190) NOT NULL,
   content TEXT NOT NULL,
-  created_by INT UNSIGNED NOT NULL,
-  published TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_announcements_created (created_at)
+  created_by INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  published BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX IF NOT EXISTS idx_announcements_created ON announcements (created_at);
 
-CREATE TABLE chat_messages (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  sender_id INT UNSIGNED NOT NULL,
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id SERIAL PRIMARY KEY,
+  sender_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   message TEXT NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  edited_at DATETIME DEFAULT NULL,
-  deleted_at DATETIME DEFAULT NULL,
-  deleted_by INT UNSIGNED DEFAULT NULL,
-  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL,
-  INDEX idx_chat_created (created_at)
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  edited_at TIMESTAMP DEFAULT NULL,
+  deleted_at TIMESTAMP DEFAULT NULL,
+  deleted_by INT REFERENCES users(id) ON DELETE SET NULL
 );
+CREATE INDEX IF NOT EXISTS idx_chat_created ON chat_messages (created_at);
 
-CREATE TABLE chat_reactions (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  message_id INT UNSIGNED NOT NULL,
-  user_id INT UNSIGNED NOT NULL,
+CREATE TABLE IF NOT EXISTS chat_reactions (
+  id SERIAL PRIMARY KEY,
+  message_id INT NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   emoji VARCHAR(12) NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uniq_reaction (message_id, user_id, emoji),
-  FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_reactions_message (message_id)
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (message_id, user_id, emoji)
 );
+CREATE INDEX IF NOT EXISTS idx_reactions_message ON chat_reactions (message_id);
 
-CREATE TABLE audit_logs (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  actor_id INT UNSIGNED NOT NULL,
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id SERIAL PRIMARY KEY,
+  actor_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   action VARCHAR(255) NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_audit_created (created_at)
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs (created_at);
 
-CREATE TABLE messages (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  sender_id INT UNSIGNED NOT NULL,
+CREATE TABLE IF NOT EXISTS messages (
+  id SERIAL PRIMARY KEY,
+  sender_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   subject VARCHAR(190) NOT NULL,
   body TEXT NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_messages_created (created_at)
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX IF NOT EXISTS idx_messages_created ON messages (created_at);
 
-CREATE TABLE monthly_settings (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS monthly_settings (
+  id SERIAL PRIMARY KEY,
   month VARCHAR(20) NOT NULL,
   year INT NOT NULL,
-  amount DECIMAL(12,2) NOT NULL,
-  set_by INT UNSIGNED NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uniq_month_year (month, year),
-  FOREIGN KEY (set_by) REFERENCES users(id) ON DELETE CASCADE
+  amount NUMERIC(12, 2) NOT NULL,
+  set_by INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (month, year)
 );
 
-CREATE TABLE app_settings (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS app_settings (
+  id SERIAL PRIMARY KEY,
   setting_key VARCHAR(120) NOT NULL UNIQUE,
   setting_value TEXT NOT NULL,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE rate_limits (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS rate_limits (
+  id SERIAL PRIMARY KEY,
   rate_key VARCHAR(190) NOT NULL UNIQUE,
-  window_start DATETIME NOT NULL,
+  window_start TIMESTAMP NOT NULL,
   request_count INT NOT NULL DEFAULT 0,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
