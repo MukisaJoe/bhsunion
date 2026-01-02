@@ -59,6 +59,48 @@ final class ContributionsController
         Response::json(['success' => true, 'contributions' => $stmt->fetchAll()]);
     }
 
+    public static function createAdmin(): void
+    {
+        $admin = Auth::requireRole('admin');
+        $data = Utils::jsonBody();
+        $memberId = (int)($data['member_id'] ?? 0);
+        $month = trim((string)($data['month'] ?? ''));
+        $year = (int)($data['year'] ?? 0);
+        $amount = (float)($data['amount'] ?? 0);
+
+        if ($memberId <= 0 || $month === '' || $year < 2000 || $amount <= 0) {
+            Response::error('Invalid contribution data', 422);
+        }
+
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare('SELECT id FROM users WHERE id = ? AND role = ?');
+        $stmt->execute([$memberId, 'member']);
+        if (!$stmt->fetch()) {
+            Response::error('Member not found', 404);
+        }
+
+        $stmt = $pdo->prepare('SELECT amount FROM monthly_settings WHERE month = ? AND year = ?');
+        $stmt->execute([$month, $year]);
+        if (!$stmt->fetch()) {
+            Response::error('Contribution amount not set for this period', 422);
+        }
+
+        $stmt = $pdo->prepare('SELECT id, status FROM contributions WHERE member_id = ? AND month = ? AND year = ? ORDER BY submitted_at DESC LIMIT 1');
+        $stmt->execute([$memberId, $month, $year]);
+        $existing = $stmt->fetch();
+        if ($existing && $existing['status'] !== 'rejected') {
+            Response::error('Contribution already exists for this period', 422);
+        }
+
+        $stmt = $pdo->prepare('INSERT INTO contributions (member_id, month, year, amount) VALUES (?, ?, ?, ?)');
+        $stmt->execute([$memberId, $month, $year, $amount]);
+
+        $stmt = $pdo->prepare('INSERT INTO audit_logs (actor_id, action) VALUES (?, ?)');
+        $stmt->execute([(int)$admin['id'], "Submitted contribution for member #{$memberId} ({$month} {$year}, UGX {$amount})"]);
+
+        Response::json(['success' => true]);
+    }
+
     public static function confirm(int $contributionId): void
     {
         $admin = Auth::requireRole('admin');

@@ -144,6 +144,9 @@ switch (true) {
     case $method === 'GET' && $path === '/admin/contributions':
         ContributionsController::listAdmin();
         break;
+    case $method === 'POST' && $path === '/admin/contributions':
+        ContributionsController::createAdmin();
+        break;
 
     case $method === 'POST' && preg_match('#^/admin/contributions/(\d+)/confirm$#', $path, $matches):
         ContributionsController::confirm((int)$matches[1]);
