@@ -48,6 +48,7 @@ if ($path === '') {
     $path = '/';
 }
 
+// Rate limiting (non-blocking - log errors but continue)
 try {
     if ($path === '/auth/login') {
         RateLimiter::enforce('login', 10);
@@ -55,7 +56,8 @@ try {
         RateLimiter::enforce();
     }
 } catch (Throwable $e) {
-    Response::error('Rate limiter unavailable: ' . $e->getMessage(), 500);
+    // Log rate limiter errors but don't block requests
+    error_log('Rate limiter error: ' . $e->getMessage());
 }
 
 switch (true) {
