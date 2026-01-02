@@ -26,7 +26,7 @@ final class DashboardController
         $treasuryBalance = self::treasuryBalance($pdo);
         $latestPayments = self::latestPayments($pdo);
 
-        $pendingContributions = self::pendingContributions($pdo, $monthName, $year);
+        $pendingContributions = self::pendingContributions($pdo);
         $alerts = self::alerts($activeMembers, $paidMembers, $pendingPayments);
         $recentActivities = self::recentActivities($pdo);
 
@@ -143,17 +143,17 @@ final class DashboardController
         return $stmt->fetchAll();
     }
 
-    private static function pendingContributions(PDO $pdo, string $month, int $year): array
+    private static function pendingContributions(PDO $pdo): array
     {
         $stmt = $pdo->prepare(
             "SELECT c.id, c.amount, c.month, c.year, c.submitted_at, u.name AS member_name
              FROM contributions c
              JOIN users u ON c.member_id = u.id
-             WHERE c.status = 'pending' AND c.month = ? AND c.year = ?
+             WHERE c.status = 'pending'
              ORDER BY c.submitted_at DESC
              LIMIT 5"
         );
-        $stmt->execute([$month, $year]);
+        $stmt->execute();
         return $stmt->fetchAll();
     }
 
