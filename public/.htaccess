@@ -3,9 +3,9 @@ RewriteEngine On
 # Disable directory listing
 Options -Indexes
 
-# Route /api/* and /api requests to api/index.php (before checking if file exists)
+# Route /api/* and /api requests directly to api/index.php
 RewriteCond %{REQUEST_URI} ^/api
-RewriteRule ^api/?(.*)$ /api/index.php [QSA,L]
+RewriteRule ^api/?(.*)$ api/index.php [QSA,L]
 
 # For root and other non-file requests, use index.php router
 RewriteCond %{REQUEST_FILENAME} !-f

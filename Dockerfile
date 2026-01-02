@@ -17,7 +17,8 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
 RUN chown -R www-data:www-data /var/www/html \
-    && sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+    && sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf \
+    && ln -s /var/www/html/api /var/www/html/public/api
 
 COPY docker-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
