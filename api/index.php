@@ -237,6 +237,23 @@ switch (true) {
         TreasuryController::listAdjustments();
         break;
 
+    case $method === 'GET' && $path === '/debug/headers':
+        $headers = [];
+        if (function_exists('getallheaders')) {
+            $headers = getallheaders();
+        }
+        Response::json([
+            'success' => true,
+            'http_authorization' => $_SERVER['HTTP_AUTHORIZATION'] ?? 'not set',
+            'authorization' => $_SERVER['Authorization'] ?? 'not set',
+            'redirect_http_authorization' => $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? 'not set',
+            'all_headers' => $headers,
+            'server_vars' => array_filter($_SERVER, function($key) {
+                return stripos($key, 'auth') !== false || stripos($key, 'http') !== false;
+            }, ARRAY_FILTER_USE_KEY)
+        ]);
+        break;
+
     case $method === 'GET' && $path === '/about':
         SettingsController::getAbout();
         break;
