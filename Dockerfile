@@ -2,8 +2,12 @@ FROM php:8.2-apache
 
 RUN a2enmod rewrite
 
-# Install PDO MySQL and PostgreSQL extensions
-RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
+# Install PostgreSQL client headers for PDO_pgsql.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq-dev \
+    && docker-php-ext-install pdo_pgsql \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy API directory
 COPY api/ /var/www/html/api/
