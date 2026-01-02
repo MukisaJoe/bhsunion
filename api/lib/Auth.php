@@ -8,6 +8,26 @@ require_once __DIR__ . '/../config/config.php';
 
 final class Auth
 {
+    public static function tryUser(): ?array
+    {
+        $token = self::bearerToken();
+        if ($token === null) {
+            return null;
+        }
+        $hash = hash('sha256', $token);
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare('SELECT u.* FROM session_tokens t JOIN users u ON u.id = t.user_id WHERE t.token_hash = ? AND t.expires_at > NOW()');
+        $stmt->execute([$hash]);
+        $user = $stmt->fetch();
+        if (!$user) {
+            return null;
+        }
+        if ($user['status'] !== 'active') {
+            return null;
+        }
+        return $user;
+    }
+
     public static function requireUser(): array
     {
         $token = self::bearerToken();
@@ -67,4 +87,3 @@ final class Auth
         return null;
     }
 }
-

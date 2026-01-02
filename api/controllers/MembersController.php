@@ -25,6 +25,15 @@ final class MembersController
         Response::json(['success' => true, 'members' => $members]);
     }
 
+    public static function listPublic(): void
+    {
+        Auth::requireUser();
+        $pdo = Database::connection();
+        $stmt = $pdo->query("SELECT id, name, status, created_at FROM users WHERE role = 'member' AND status = 'active' ORDER BY created_at DESC");
+        $members = $stmt->fetchAll();
+        Response::json(['success' => true, 'members' => $members]);
+    }
+
     public static function create(): void
     {
         $admin = Auth::requireRole('admin');

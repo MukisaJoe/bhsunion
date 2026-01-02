@@ -47,6 +47,7 @@ Members
 - `PUT /member/profile`
 - `POST /member/contributions`
 - `GET /member/contributions`
+- `GET /members`
 
 Admin
 - `GET /admin/members?status=pending|active|disabled`
@@ -59,6 +60,10 @@ Admin
 - `GET /admin/withdrawals`
 - `GET /admin/reports`
 - `GET /admin/messages`
+- `POST /admin/messages`
+
+Client Logs
+- `POST /client/logs`
 - `POST /admin/settings/monthly-amount`
 - `POST /admin/settings/current-period`
 - `PUT /admin/about`

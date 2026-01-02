@@ -17,6 +17,7 @@ require_once __DIR__ . '/controllers/SettingsController.php';
 require_once __DIR__ . '/controllers/AuditController.php';
 require_once __DIR__ . '/controllers/ExportsController.php';
 require_once __DIR__ . '/controllers/DashboardController.php';
+require_once __DIR__ . '/controllers/ClientLogsController.php';
 
 // Basic error handler to avoid empty responses on fatal errors.
 register_shutdown_function(function (): void {
@@ -83,6 +84,10 @@ switch (true) {
 
     case $method === 'GET' && $path === '/admin/members':
         MembersController::list();
+        break;
+
+    case $method === 'GET' && $path === '/members':
+        MembersController::listPublic();
         break;
 
     case $method === 'POST' && $path === '/admin/members':
@@ -181,6 +186,10 @@ switch (true) {
         MessagesController::list();
         break;
 
+    case $method === 'POST' && $path === '/admin/messages':
+        MessagesController::create();
+        break;
+
     case $method === 'GET' && $path === '/settings/monthly-amount':
         SettingsController::getMonthlyAmount();
         break;
@@ -191,6 +200,10 @@ switch (true) {
 
     case $method === 'GET' && $path === '/settings/current-period':
         SettingsController::getCurrentPeriod();
+        break;
+
+    case $method === 'POST' && $path === '/client/logs':
+        ClientLogsController::create();
         break;
 
     case $method === 'POST' && $path === '/admin/settings/current-period':
