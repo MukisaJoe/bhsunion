@@ -42,6 +42,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     Response::json(['success' => true]);
 }
 
+// Debug endpoint to check headers (remove in production)
+if ($path === '/debug/headers') {
+    $headers = [];
+    if (function_exists('getallheaders')) {
+        $headers = getallheaders();
+    }
+    Response::json([
+        'success' => true,
+        'http_authorization' => $_SERVER['HTTP_AUTHORIZATION'] ?? 'not set',
+        'authorization' => $_SERVER['Authorization'] ?? 'not set',
+        'redirect_http_authorization' => $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? 'not set',
+        'all_headers' => $headers,
+        'server_vars' => array_filter($_SERVER, function($key) {
+            return stripos($key, 'auth') !== false || stripos($key, 'http') !== false;
+        }, ARRAY_FILTER_USE_KEY)
+    ]);
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
 $path = preg_replace('#^/api#', '', $path);
