@@ -1,13 +1,14 @@
 RewriteEngine On
 
-# Route /api/* requests to api/index.php
-RewriteRule ^api/(.*)$ ../api/index.php [QSA,L]
+# Disable directory listing
+Options -Indexes
 
-# Route /api requests to api/index.php
-RewriteRule ^api$ ../api/index.php [QSA,L]
+# Route /api/* and /api requests to api/index.php (before checking if file exists)
+RewriteCond %{REQUEST_URI} ^/api
+RewriteRule ^api/?(.*)$ /api/index.php [QSA,L]
 
-# Route root and other requests to api/index.php
+# For root and other non-file requests, use index.php router
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ ../api/index.php [QSA,L]
+RewriteRule ^ index.php [QSA,L]
 
