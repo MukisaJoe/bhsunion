@@ -35,7 +35,10 @@ final class SettingsController
             Response::error('Invalid month settings', 422);
         }
         $pdo = Database::connection();
-        $stmt = $pdo->prepare('INSERT INTO monthly_settings (month, year, amount, set_by) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE amount = VALUES(amount), set_by = VALUES(set_by)');
+        $stmt = $pdo->prepare(
+            'INSERT INTO monthly_settings (month, year, amount, set_by) VALUES (?, ?, ?, ?)
+             ON CONFLICT (month, year) DO UPDATE SET amount = EXCLUDED.amount, set_by = EXCLUDED.set_by'
+        );
         $stmt->execute([$month, $year, $amount, (int)$admin['id']]);
 
         Response::json(['success' => true]);
@@ -52,7 +55,10 @@ final class SettingsController
         }
         $pdo = Database::connection();
         $value = json_encode(['month' => $month, 'year' => $year]);
-        $stmt = $pdo->prepare('INSERT INTO app_settings (setting_key, setting_value) VALUES ("current_period", ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
+        $stmt = $pdo->prepare(
+            'INSERT INTO app_settings (setting_key, setting_value) VALUES (\'current_period\', ?)
+             ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()'
+        );
         $stmt->execute([$value]);
 
         $stmt = $pdo->prepare('INSERT INTO audit_logs (actor_id, action) VALUES (?, ?)');
@@ -69,6 +75,13 @@ final class SettingsController
         $stmt->execute();
         $row = $stmt->fetch();
         $value = $row ? json_decode($row['setting_value'], true) : null;
+        if (!$value) {
+            $stmt = $pdo->query('SELECT month, year FROM monthly_settings ORDER BY created_at DESC LIMIT 1');
+            $fallback = $stmt->fetch();
+            if ($fallback) {
+                $value = ['month' => $fallback['month'], 'year' => (int)$fallback['year']];
+            }
+        }
         Response::json(['success' => true, 'period' => $value]);
     }
 
@@ -94,12 +107,17 @@ final class SettingsController
         $account = trim((string)($data['account_details'] ?? ''));
 
         $pdo = Database::connection();
-        $stmt = $pdo->prepare('INSERT INTO app_settings (setting_key, setting_value) VALUES ("about_content", ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
+        $stmt = $pdo->prepare(
+            'INSERT INTO app_settings (setting_key, setting_value) VALUES (\'about_content\', ?)
+             ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()'
+        );
         $stmt->execute([$about]);
-        $stmt = $pdo->prepare('INSERT INTO app_settings (setting_key, setting_value) VALUES ("account_details", ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
+        $stmt = $pdo->prepare(
+            'INSERT INTO app_settings (setting_key, setting_value) VALUES (\'account_details\', ?)
+             ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()'
+        );
         $stmt->execute([$account]);
 
         Response::json(['success' => true]);
     }
 }
-

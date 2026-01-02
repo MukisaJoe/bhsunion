@@ -26,7 +26,7 @@ final class DashboardController
         $treasuryBalance = self::treasuryBalance($pdo);
         $latestPayments = self::latestPayments($pdo);
 
-        $pendingMemberList = self::pendingMembers($pdo);
+        $pendingContributions = self::pendingContributions($pdo, $monthName, $year);
         $alerts = self::alerts($activeMembers, $paidMembers, $pendingPayments);
         $recentActivities = self::recentActivities($pdo);
 
@@ -42,7 +42,7 @@ final class DashboardController
                 'paid_members' => $paidMembers,
                 'payment_total' => $paymentTotal,
             ],
-            'pending_members' => $pendingMemberList,
+            'pending_contributions' => $pendingContributions,
             'alerts' => $alerts,
             'recent_activities' => $recentActivities,
         ]);
@@ -54,6 +54,7 @@ final class DashboardController
         $pdo = Database::connection();
 
         [$monthName, $year] = self::currentPeriod($pdo);
+        $monthlyAmount = self::monthlyAmount($pdo, $monthName, $year);
 
         $treasuryBalance = self::treasuryBalance($pdo);
         $latestPayments = self::latestPayments($pdo);
@@ -63,6 +64,7 @@ final class DashboardController
         Response::json([
             'success' => true,
             'period' => ['month' => $monthName, 'year' => $year],
+            'monthly_amount' => $monthlyAmount,
             'treasury_balance' => $treasuryBalance,
             'latest_payments' => $latestPayments,
             'announcements' => $announcements,
@@ -72,10 +74,20 @@ final class DashboardController
 
     private static function currentPeriod(PDO $pdo): array
     {
-        $stmt = $pdo->query('SELECT month, year FROM monthly_settings ORDER BY created_at DESC LIMIT 1');
+        $stmt = $pdo->prepare('SELECT setting_value FROM app_settings WHERE setting_key = \'current_period\'');
+        $stmt->execute();
         $row = $stmt->fetch();
         if ($row) {
-            return [$row['month'], (int)$row['year']];
+            $value = json_decode($row['setting_value'], true);
+            if (is_array($value) && isset($value['month'], $value['year'])) {
+                return [$value['month'], (int)$value['year']];
+            }
+        }
+
+        $stmt = $pdo->query('SELECT month, year FROM monthly_settings ORDER BY created_at DESC LIMIT 1');
+        $fallback = $stmt->fetch();
+        if ($fallback) {
+            return [$fallback['month'], (int)$fallback['year']];
         }
 
         $monthName = date('F');
@@ -128,6 +140,20 @@ final class DashboardController
     private static function pendingMembers(PDO $pdo): array
     {
         $stmt = $pdo->query("SELECT id, name, email FROM users WHERE role = 'member' AND status = 'pending' ORDER BY created_at DESC LIMIT 5");
+        return $stmt->fetchAll();
+    }
+
+    private static function pendingContributions(PDO $pdo, string $month, int $year): array
+    {
+        $stmt = $pdo->prepare(
+            "SELECT c.id, c.amount, c.month, c.year, c.submitted_at, u.name AS member_name
+             FROM contributions c
+             JOIN users u ON c.member_id = u.id
+             WHERE c.status = 'pending' AND c.month = ? AND c.year = ?
+             ORDER BY c.submitted_at DESC
+             LIMIT 5"
+        );
+        $stmt->execute([$month, $year]);
         return $stmt->fetchAll();
     }
 
@@ -203,5 +229,16 @@ final class DashboardController
         });
 
         return array_slice($activity, 0, 4);
+    }
+
+    private static function monthlyAmount(PDO $pdo, string $month, int $year): ?float
+    {
+        $stmt = $pdo->prepare('SELECT amount FROM monthly_settings WHERE month = ? AND year = ?');
+        $stmt->execute([$month, $year]);
+        $row = $stmt->fetch();
+        if (!$row) {
+            return null;
+        }
+        return (float)$row['amount'];
     }
 }
