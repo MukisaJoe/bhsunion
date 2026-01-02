@@ -114,16 +114,9 @@ final class DashboardController
 
     private static function treasuryBalance(PDO $pdo): float
     {
-        $stmt = $pdo->query("SELECT COALESCE(SUM(amount), 0) AS total FROM contributions WHERE status = 'confirmed'");
-        $contrib = (float)($stmt->fetch()['total'] ?? 0);
-
-        $stmt = $pdo->query('SELECT COALESCE(SUM(amount), 0) AS total FROM withdrawals');
-        $withdrawals = (float)($stmt->fetch()['total'] ?? 0);
-
-        $stmt = $pdo->query('SELECT COALESCE(SUM(amount), 0) AS total FROM treasury_adjustments');
-        $adjustments = (float)($stmt->fetch()['total'] ?? 0);
-
-        return max($contrib + $adjustments - $withdrawals, 0.0);
+        // Use the database function for accurate balance calculation
+        $stmt = $pdo->query('SELECT get_treasury_balance() AS balance');
+        return (float)$stmt->fetch()['balance'];
     }
 
     private static function latestPayments(PDO $pdo): array
