@@ -16,10 +16,10 @@ final class MembersController
 
         $pdo = Database::connection();
         if ($status) {
-            $stmt = $pdo->prepare("SELECT id, name, email, role, status, phone, created_at FROM users WHERE role = 'member' AND status = ? ORDER BY created_at DESC");
+            $stmt = $pdo->prepare("SELECT id, name, email, role, status, phone, created_at FROM users WHERE (role IS NULL OR role <> 'admin') AND status = ? ORDER BY created_at DESC");
             $stmt->execute([$status]);
         } else {
-            $stmt = $pdo->query("SELECT id, name, email, role, status, phone, created_at FROM users WHERE role = 'member' ORDER BY created_at DESC");
+            $stmt = $pdo->query("SELECT id, name, email, role, status, phone, created_at FROM users WHERE role IS NULL OR role <> 'admin' ORDER BY created_at DESC");
         }
         $members = $stmt->fetchAll();
         Response::json(['success' => true, 'members' => $members]);
@@ -29,7 +29,7 @@ final class MembersController
     {
         Auth::requireUser();
         $pdo = Database::connection();
-        $stmt = $pdo->query("SELECT id, name, status, created_at FROM users WHERE role = 'member' ORDER BY created_at DESC");
+        $stmt = $pdo->query("SELECT id, name, status, created_at FROM users WHERE role IS NULL OR role <> 'admin' ORDER BY created_at DESC");
         $members = $stmt->fetchAll();
         Response::json(['success' => true, 'members' => $members]);
     }
