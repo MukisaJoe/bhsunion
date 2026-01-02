@@ -42,6 +42,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     Response::json(['success' => true]);
 }
 
+$method = $_SERVER['REQUEST_METHOD'];
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
+$path = preg_replace('#^/api#', '', $path);
+$path = rtrim($path, '/');
+if ($path === '') {
+    $path = '/';
+}
+
 // Debug endpoint to check headers (remove in production)
 if ($path === '/debug/headers') {
     $headers = [];
@@ -58,14 +66,6 @@ if ($path === '/debug/headers') {
             return stripos($key, 'auth') !== false || stripos($key, 'http') !== false;
         }, ARRAY_FILTER_USE_KEY)
     ]);
-}
-
-$method = $_SERVER['REQUEST_METHOD'];
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
-$path = preg_replace('#^/api#', '', $path);
-$path = rtrim($path, '/');
-if ($path === '') {
-    $path = '/';
 }
 
 // Rate limiting (non-blocking - log errors but continue)
