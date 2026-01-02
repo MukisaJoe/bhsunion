@@ -20,6 +20,10 @@ psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f database.sql
 echo "2. Running trigger migrations..."
 psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f migrations/001_add_triggers.sql
 
+# Run treasury adjustments migration
+echo "3. Running treasury adjustments migration..."
+psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -f migrations/002_add_treasury_adjustments.sql
+
 echo "Migrations completed!"
 echo ""
 echo "Verifying database state..."
