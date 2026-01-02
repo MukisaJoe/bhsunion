@@ -80,10 +80,31 @@ final class Auth
 
     private static function bearerToken(): ?string
     {
-        $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['Authorization'] ?? '';
-        if (stripos($header, 'Bearer ') === 0) {
+        // Try multiple methods to get Authorization header
+        $header = '';
+        
+        // Method 1: Standard HTTP_AUTHORIZATION (works with most servers)
+        if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $header = $_SERVER['HTTP_AUTHORIZATION'];
+        }
+        // Method 2: Alternative Authorization key
+        elseif (isset($_SERVER['Authorization'])) {
+            $header = $_SERVER['Authorization'];
+        }
+        // Method 3: Apache request headers (if function exists)
+        elseif (function_exists('apache_request_headers')) {
+            $headers = apache_request_headers();
+            $header = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+        }
+        // Method 4: Check REDIRECT_HTTP_AUTHORIZATION (some Apache configs)
+        elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+            $header = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+        }
+        
+        if ($header && stripos($header, 'Bearer ') === 0) {
             return trim(substr($header, 7));
         }
+        
         return null;
     }
 }
