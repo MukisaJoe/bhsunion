@@ -203,12 +203,21 @@ final class DashboardController
         $rows = $stmt->fetchAll();
         foreach ($rows as $row) {
             $status = $row['status'];
-            $label = $status === 'confirmed'
-                ? 'Admin confirmed your contribution'
-                : 'You submitted a contribution';
-            $time = $status === 'confirmed' ? $row['confirmed_at'] : $row['submitted_at'];
+            if ($status === 'confirmed') {
+                $label = 'Admin confirmed your contribution';
+                $time = $row['confirmed_at'];
+                $icon = '✅';
+            } elseif ($status === 'rejected') {
+                $label = 'Admin rejected your contribution';
+                $time = $row['submitted_at'];
+                $icon = '⚠️';
+            } else {
+                $label = 'You submitted a contribution';
+                $time = $row['submitted_at'];
+                $icon = '✓';
+            }
             $activity[] = [
-                'icon' => $status === 'confirmed' ? '✅' : '✓',
+                'icon' => $icon,
                 'text' => $label . ' • UGX ' . number_format((float)$row['amount'], 0, '.', ',') . ' (' . $row['month'] . ' ' . $row['year'] . ')',
                 'time' => $time,
             ];

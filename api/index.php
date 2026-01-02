@@ -148,6 +148,12 @@ switch (true) {
     case $method === 'POST' && preg_match('#^/admin/contributions/(\d+)/confirm$#', $path, $matches):
         ContributionsController::confirm((int)$matches[1]);
         break;
+    case $method === 'POST' && preg_match('#^/admin/contributions/(\d+)/reject$#', $path, $matches):
+        ContributionsController::reject((int)$matches[1]);
+        break;
+    case $method === 'POST' && preg_match('#^/member/contributions/(\d+)/cancel$#', $path, $matches):
+        ContributionsController::cancel((int)$matches[1]);
+        break;
 
     case $method === 'POST' && $path === '/admin/withdrawals':
         WithdrawalsController::create();

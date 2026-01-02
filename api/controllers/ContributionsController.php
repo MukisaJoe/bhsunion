@@ -22,6 +22,11 @@ final class ContributionsController
         }
 
         $pdo = Database::connection();
+        $stmt = $pdo->prepare('SELECT amount FROM monthly_settings WHERE month = ? AND year = ?');
+        $stmt->execute([$month, $year]);
+        if (!$stmt->fetch()) {
+            Response::error('Contribution amount not set for this period', 422);
+        }
         $stmt = $pdo->prepare('INSERT INTO contributions (member_id, month, year, amount) VALUES (?, ?, ?, ?)');
         $stmt->execute([(int)$user['id'], $month, $year, $amount]);
 
@@ -63,6 +68,64 @@ final class ContributionsController
 
         $stmt = $pdo->prepare('INSERT INTO audit_logs (actor_id, action) VALUES (?, ?)');
         $stmt->execute([(int)$admin['id'], "Confirmed contribution #{$contributionId}"]);
+
+        Response::json(['success' => true]);
+    }
+
+    public static function reject(int $contributionId): void
+    {
+        $admin = Auth::requireRole('admin');
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare("SELECT c.id, c.amount, c.month, c.year, c.member_id, c.status, u.name AS member_name FROM contributions c JOIN users u ON c.member_id = u.id WHERE c.id = ?");
+        $stmt->execute([$contributionId]);
+        $row = $stmt->fetch();
+        if (!$row) {
+            Response::error('Contribution not found', 404);
+        }
+        if ($row['status'] !== 'pending') {
+            Response::error('Only pending contributions can be deleted', 422);
+        }
+
+        $stmt = $pdo->prepare("UPDATE contributions SET status = 'rejected', confirmed_at = NULL, confirmed_by = NULL WHERE id = ?");
+        $stmt->execute([$contributionId]);
+
+        $amount = (float)$row['amount'];
+        $month = $row['month'];
+        $year = $row['year'];
+        $memberName = $row['member_name'];
+
+        $stmt = $pdo->prepare('INSERT INTO audit_logs (actor_id, action) VALUES (?, ?)');
+        $stmt->execute([(int)$admin['id'], "Rejected contribution #{$contributionId} ({$memberName}, {$month} {$year}, UGX {$amount})"]);
+
+        // Notify members via group chat message.
+        $stmt = $pdo->prepare('INSERT INTO chat_messages (sender_id, message) VALUES (?, ?)');
+        $stmt->execute([
+            (int)$admin['id'],
+            "Admin rejected {$memberName}'s contribution for {$month} {$year} (UGX " . number_format($amount, 0, '.', ',') . ").",
+        ]);
+
+        Response::json(['success' => true]);
+    }
+
+    public static function cancel(int $contributionId): void
+    {
+        $user = Auth::requireRole('member');
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare("SELECT id, status FROM contributions WHERE id = ? AND member_id = ?");
+        $stmt->execute([$contributionId, (int)$user['id']]);
+        $row = $stmt->fetch();
+        if (!$row) {
+            Response::error('Contribution not found', 404);
+        }
+        if ($row['status'] !== 'pending') {
+            Response::error('Only pending contributions can be cancelled', 422);
+        }
+
+        $stmt = $pdo->prepare("UPDATE contributions SET status = 'rejected', confirmed_at = NULL, confirmed_by = NULL WHERE id = ?");
+        $stmt->execute([$contributionId]);
+
+        $stmt = $pdo->prepare('INSERT INTO audit_logs (actor_id, action) VALUES (?, ?)');
+        $stmt->execute([(int)$user['id'], "Cancelled contribution #{$contributionId}"]);
 
         Response::json(['success' => true]);
     }
