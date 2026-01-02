@@ -40,7 +40,7 @@ final class MembersController
         $data = Utils::jsonBody();
         $name = trim((string)($data['name'] ?? ''));
         $email = trim((string)($data['email'] ?? ''));
-        $password = (string)($data['password'] ?? '');
+        $password = (string)($data['password'] ?? 'Bhs2016');
         $phone = trim((string)($data['phone'] ?? ''));
 
         if ($name === '' || $email === '' || $password === '') {
@@ -50,13 +50,24 @@ final class MembersController
         $hash = password_hash($password, PASSWORD_DEFAULT);
 
         $pdo = Database::connection();
+        $check = $pdo->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
+        $check->execute([$email]);
+        if ($check->fetch()) {
+            Response::error('Email already exists', 409);
+        }
+
         $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash, role, status, phone) VALUES (?, ?, ?, 'member', 'active', ?)");
         $stmt->execute([$name, $email, $hash, $phone]);
+        $memberId = (int)$pdo->lastInsertId();
 
         $stmt = $pdo->prepare('INSERT INTO audit_logs (actor_id, action) VALUES (?, ?)');
         $stmt->execute([(int)$admin['id'], "Created member account for {$name}"]);
 
-        Response::json(['success' => true]);
+        $stmt = $pdo->prepare("SELECT id, name, email, role, status, phone, created_at FROM users WHERE id = ?");
+        $stmt->execute([$memberId]);
+        $member = $stmt->fetch();
+
+        Response::json(['success' => true, 'member' => $member]);
     }
 
     public static function updateStatus(int $memberId): void

@@ -65,9 +65,23 @@ final class ChatController
         }
         self::purgeOldMessages();
         $pdo = Database::connection();
-        $stmt = $pdo->prepare('INSERT INTO chat_messages (sender_id, message) VALUES (?, ?)');
+        $stmt = $pdo->prepare('INSERT INTO chat_messages (sender_id, message) VALUES (?, ?) RETURNING id, message, created_at, edited_at, deleted_at');
         $stmt->execute([(int)$user['id'], $message]);
-        Response::json(['success' => true]);
+        $row = $stmt->fetch();
+
+        Response::json([
+            'success' => true,
+            'message' => [
+                'id' => $row['id'],
+                'message' => $row['message'],
+                'created_at' => $row['created_at'],
+                'edited_at' => $row['edited_at'],
+                'deleted_at' => $row['deleted_at'],
+                'sender_name' => $user['name'],
+                'sender_role' => $user['role'],
+                'reactions' => new stdClass(),
+            ],
+        ]);
     }
 
     public static function edit(int $messageId): void
