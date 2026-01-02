@@ -1,0 +1,131 @@
+CREATE TABLE users (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(190) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  name VARCHAR(190) NOT NULL,
+  role ENUM('admin','member') NOT NULL DEFAULT 'member',
+  status ENUM('active','pending','disabled') NOT NULL DEFAULT 'pending',
+  phone VARCHAR(40) DEFAULT NULL,
+  provider VARCHAR(60) DEFAULT NULL,
+  mobile_money_number VARCHAR(40) DEFAULT NULL,
+  other_number VARCHAR(40) DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE session_tokens (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  token_hash CHAR(64) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY token_hash_unique (token_hash)
+);
+
+CREATE TABLE contributions (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  member_id INT UNSIGNED NOT NULL,
+  month VARCHAR(20) NOT NULL,
+  year INT NOT NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  status ENUM('pending','confirmed','rejected') NOT NULL DEFAULT 'pending',
+  submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  confirmed_at DATETIME DEFAULT NULL,
+  confirmed_by INT UNSIGNED DEFAULT NULL,
+  FOREIGN KEY (member_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (confirmed_by) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_contrib_member_period (member_id, year, month),
+  INDEX idx_contrib_status (status)
+);
+
+CREATE TABLE withdrawals (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  admin_id INT UNSIGNED NOT NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  reason VARCHAR(255) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_withdrawals_created (created_at)
+);
+
+CREATE TABLE announcements (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(190) NOT NULL,
+  content TEXT NOT NULL,
+  created_by INT UNSIGNED NOT NULL,
+  published TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_announcements_created (created_at)
+);
+
+CREATE TABLE chat_messages (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  sender_id INT UNSIGNED NOT NULL,
+  message TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  edited_at DATETIME DEFAULT NULL,
+  deleted_at DATETIME DEFAULT NULL,
+  deleted_by INT UNSIGNED DEFAULT NULL,
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_chat_created (created_at)
+);
+
+CREATE TABLE chat_reactions (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  message_id INT UNSIGNED NOT NULL,
+  user_id INT UNSIGNED NOT NULL,
+  emoji VARCHAR(12) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_reaction (message_id, user_id, emoji),
+  FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_reactions_message (message_id)
+);
+
+CREATE TABLE audit_logs (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  actor_id INT UNSIGNED NOT NULL,
+  action VARCHAR(255) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_audit_created (created_at)
+);
+
+CREATE TABLE messages (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  sender_id INT UNSIGNED NOT NULL,
+  subject VARCHAR(190) NOT NULL,
+  body TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_messages_created (created_at)
+);
+
+CREATE TABLE monthly_settings (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  month VARCHAR(20) NOT NULL,
+  year INT NOT NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  set_by INT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_month_year (month, year),
+  FOREIGN KEY (set_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE app_settings (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  setting_key VARCHAR(120) NOT NULL UNIQUE,
+  setting_value TEXT NOT NULL,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE rate_limits (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  rate_key VARCHAR(190) NOT NULL UNIQUE,
+  window_start DATETIME NOT NULL,
+  request_count INT NOT NULL DEFAULT 0,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
