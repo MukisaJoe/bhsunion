@@ -78,11 +78,11 @@ final class MembersController
 
         $hash = password_hash($newPassword, PASSWORD_DEFAULT);
         $pdo = Database::connection();
-        $stmt = $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ? AND role = \"member\"');
+        $stmt = $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ? AND role = "member"');
         $stmt->execute([$hash, $memberId]);
 
         $stmt = $pdo->prepare('INSERT INTO audit_logs (actor_id, action) VALUES (?, ?)');
-        $stmt->execute([(int)$admin['id'], \"Reset password for member #{$memberId}\"]);
+        $stmt->execute([(int)$admin['id'], "Reset password for member #{$memberId}"]);
 
         Response::json(['success' => true]);
     }
