@@ -18,6 +18,7 @@ require_once __DIR__ . '/controllers/AuditController.php';
 require_once __DIR__ . '/controllers/ExportsController.php';
 require_once __DIR__ . '/controllers/DashboardController.php';
 require_once __DIR__ . '/controllers/ClientLogsController.php';
+require_once __DIR__ . '/controllers/TreasuryController.php';
 
 // Basic error handler to avoid empty responses on fatal errors.
 register_shutdown_function(function (): void {
@@ -208,6 +209,14 @@ switch (true) {
 
     case $method === 'POST' && $path === '/admin/settings/current-period':
         SettingsController::setCurrentPeriod();
+        break;
+
+    case $method === 'POST' && $path === '/admin/treasury/adjust':
+        TreasuryController::adjust();
+        break;
+
+    case $method === 'GET' && $path === '/admin/treasury/adjustments':
+        TreasuryController::listAdjustments();
         break;
 
     case $method === 'GET' && $path === '/about':

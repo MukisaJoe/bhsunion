@@ -61,6 +61,8 @@ Admin
 - `GET /admin/reports`
 - `GET /admin/messages`
 - `POST /admin/messages`
+- `POST /admin/treasury/adjust`
+- `GET /admin/treasury/adjustments`
 
 Client Logs
 - `POST /client/logs`

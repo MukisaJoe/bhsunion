@@ -120,7 +120,10 @@ final class DashboardController
         $stmt = $pdo->query('SELECT COALESCE(SUM(amount), 0) AS total FROM withdrawals');
         $withdrawals = (float)($stmt->fetch()['total'] ?? 0);
 
-        return max($contrib - $withdrawals, 0.0);
+        $stmt = $pdo->query('SELECT COALESCE(SUM(amount), 0) AS total FROM treasury_adjustments');
+        $adjustments = (float)($stmt->fetch()['total'] ?? 0);
+
+        return max($contrib + $adjustments - $withdrawals, 0.0);
     }
 
     private static function latestPayments(PDO $pdo): array
