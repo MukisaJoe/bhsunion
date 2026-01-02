@@ -74,22 +74,14 @@ final class SettingsController
         $stmt = $pdo->prepare('SELECT setting_value FROM app_settings WHERE setting_key = "current_period"');
         $stmt->execute();
         $row = $stmt->fetch();
-        $value = $row ? json_decode($row['setting_value'], true) : null;
-        if (!$value || !isset($value['month'], $value['year'])) {
-            $stmt = $pdo->query('SELECT month, year FROM monthly_settings ORDER BY created_at DESC LIMIT 1');
-            $fallback = $stmt->fetch();
-            if ($fallback) {
-                $value = ['month' => $fallback['month'], 'year' => (int)$fallback['year']];
-            } else {
-                $value = ['month' => date('F'), 'year' => (int)date('Y')];
+        $value = null;
+        if ($row) {
+            $decoded = json_decode($row['setting_value'], true);
+            if (is_array($decoded) && isset($decoded['month'], $decoded['year'])) {
+                $value = $decoded;
             }
-
-            $stmt = $pdo->prepare(
-                'INSERT INTO app_settings (setting_key, setting_value) VALUES (\'current_period\', ?)
-                 ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()'
-            );
-            $stmt->execute([json_encode($value)]);
         }
+        // Return null if no period is set - let admin set it manually
         Response::json(['success' => true, 'period' => $value]);
     }
 
