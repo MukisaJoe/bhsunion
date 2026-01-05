@@ -131,14 +131,27 @@ final class MembersController
         $user = Auth::requireUser();
         $data = Utils::jsonBody();
         $name = trim((string)($data['name'] ?? $user['name']));
+        $email = trim((string)($data['email'] ?? $user['email']));
         $phone = trim((string)($data['phone'] ?? $user['phone']));
         $provider = trim((string)($data['provider'] ?? $user['provider']));
         $mobile = trim((string)($data['mobile_money_number'] ?? $user['mobile_money_number']));
         $other = trim((string)($data['other_number'] ?? $user['other_number']));
 
+        if ($email === '') {
+            Response::error('Email is required', 422);
+        }
+
         $pdo = Database::connection();
-        $stmt = $pdo->prepare('UPDATE users SET name = ?, phone = ?, provider = ?, mobile_money_number = ?, other_number = ? WHERE id = ?');
-        $stmt->execute([$name, $phone, $provider, $mobile, $other, (int)$user['id']]);
+        if ($email !== $user['email']) {
+            $check = $pdo->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
+            $check->execute([$email]);
+            if ($check->fetch()) {
+                Response::error('Email already exists', 409);
+            }
+        }
+
+        $stmt = $pdo->prepare('UPDATE users SET name = ?, email = ?, phone = ?, provider = ?, mobile_money_number = ?, other_number = ? WHERE id = ?');
+        $stmt->execute([$name, $email, $phone, $provider, $mobile, $other, (int)$user['id']]);
 
         Response::json(['success' => true]);
     }
