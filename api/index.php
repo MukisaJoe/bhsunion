@@ -17,6 +17,7 @@ require_once __DIR__ . '/controllers/SettingsController.php';
 require_once __DIR__ . '/controllers/AuditController.php';
 require_once __DIR__ . '/controllers/ExportsController.php';
 require_once __DIR__ . '/controllers/DashboardController.php';
+require_once __DIR__ . '/controllers/SavingsController.php';
 require_once __DIR__ . '/controllers/ClientLogsController.php';
 require_once __DIR__ . '/controllers/TreasuryController.php';
 
@@ -169,6 +170,12 @@ switch (true) {
     case $method === 'GET' && $path === '/admin/dashboard':
         DashboardController::admin();
         break;
+    case $method === 'GET' && $path === '/member/overall-savings':
+        SavingsController::member();
+        break;
+    case $method === 'GET' && $path === '/admin/overall-savings':
+        SavingsController::admin();
+        break;
 
     case $method === 'GET' && $path === '/announcements':
         AnnouncementsController::list();
@@ -285,6 +292,9 @@ switch (true) {
 
     case $method === 'GET' && $path === '/admin/exports/contributions':
         ExportsController::contributions();
+        break;
+    case $method === 'GET' && $path === '/member/exports/contributions':
+        ExportsController::memberContributions();
         break;
 
     case $method === 'GET' && $path === '/admin/exports/withdrawals':
