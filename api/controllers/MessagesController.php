@@ -37,4 +37,26 @@ final class MessagesController
 
         Response::json(['success' => true]);
     }
+
+    public static function delete(int $messageId): void
+    {
+        $admin = Auth::requireRole('admin');
+        $pdo = Database::connection();
+
+        $stmt = $pdo->prepare('SELECT id, subject FROM messages WHERE id = ?');
+        $stmt->execute([$messageId]);
+        $message = $stmt->fetch();
+        if (!$message) {
+            Response::error('Message not found', 404);
+        }
+
+        $stmt = $pdo->prepare('DELETE FROM messages WHERE id = ?');
+        $stmt->execute([$messageId]);
+
+        $subject = (string)($message['subject'] ?? 'message');
+        $stmt = $pdo->prepare('INSERT INTO audit_logs (actor_id, action) VALUES (?, ?)');
+        $stmt->execute([(int)$admin['id'], "Deleted message: {$subject}"]);
+
+        Response::json(['success' => true]);
+    }
 }

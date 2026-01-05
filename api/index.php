@@ -225,6 +225,10 @@ switch (true) {
         MessagesController::create();
         break;
 
+    case $method === 'DELETE' && preg_match('#^/admin/messages/(\\d+)$#', $path, $matches):
+        MessagesController::delete((int)$matches[1]);
+        break;
+
     case $method === 'GET' && $path === '/settings/monthly-amount':
         SettingsController::getMonthlyAmount();
         break;
