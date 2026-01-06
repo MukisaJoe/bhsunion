@@ -106,8 +106,16 @@ switch (true) {
         MembersController::list();
         break;
 
+    case $method === 'GET' && preg_match('#^/admin/members/(\d+)$#', $path, $matches):
+        MembersController::show((int)$matches[1]);
+        break;
+
     case $method === 'GET' && $path === '/members':
         MembersController::listPublic();
+        break;
+
+    case $method === 'GET' && preg_match('#^/members/(\d+)$#', $path, $matches):
+        MembersController::showPublic((int)$matches[1]);
         break;
 
     case $method === 'POST' && $path === '/admin/members':

@@ -34,6 +34,32 @@ final class MembersController
         Response::json(['success' => true, 'members' => $members]);
     }
 
+    public static function show(int $memberId): void
+    {
+        Auth::requireRole('admin');
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare("SELECT id, name, email, role, status, phone, provider, mobile_money_number, other_number, created_at FROM users WHERE id = ? AND (role IS NULL OR role <> 'admin') LIMIT 1");
+        $stmt->execute([$memberId]);
+        $member = $stmt->fetch();
+        if (!$member) {
+            Response::error('Member not found', 404);
+        }
+        Response::json(['success' => true, 'member' => $member]);
+    }
+
+    public static function showPublic(int $memberId): void
+    {
+        Auth::requireUser();
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare("SELECT id, name, email, status, phone, provider, mobile_money_number, other_number, created_at FROM users WHERE id = ? AND (role IS NULL OR role <> 'admin') LIMIT 1");
+        $stmt->execute([$memberId]);
+        $member = $stmt->fetch();
+        if (!$member) {
+            Response::error('Member not found', 404);
+        }
+        Response::json(['success' => true, 'member' => $member]);
+    }
+
     public static function create(): void
     {
         $admin = Auth::requireRole('admin');
